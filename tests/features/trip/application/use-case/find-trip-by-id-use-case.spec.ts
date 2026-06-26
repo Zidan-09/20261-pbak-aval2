@@ -70,7 +70,7 @@ describe("FindTripByIdUseCase Unit Tests", () => {
 
         const input = { tripRequestId: mockTripId };
 
-        expect(() => sut.execute(input)).toThrowError("Database connection timeout");
+        expect(() => sut.execute(input)).throw("Database connection timeout");
         expect(tripRepositoryMock.findById).toHaveBeenCalledTimes(1);
     });
 });
