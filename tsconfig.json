@@ -4,7 +4,6 @@
     "target": "esnext",
     "lib": ["esnext"],
     "types": ["node"],
-    "rootDir": "./src",
     "outDir": "./dist",
     "sourceMap": true,
     "declaration": true,
@@ -30,6 +29,8 @@
   },
   "include": [
     "src/**/*.ts", 
-    "src/**/*.d.ts", 
-  ],
+    "src/**/*.d.ts",
+    "prisma.config.ts",
+    "prisma/seed.ts"
+  ]
 }
