@@ -2,8 +2,8 @@ import { UseCase } from "../../../../shared/application/use-case/usecase";
 import { TripRequestNotFoundError } from "../../domain/error/trip-request-not-found-error";
 import { TripRepository } from "../../domain/repository/trip-repository";
 import { Trip } from "../../domain/trip";
-import { FindTripRequestByIdInput as FindTripByIdInput } from "../input/find-trip-by-id-input";
-import { FindTripRequestByIdOutput as FindTripByIdOutput } from "../output/find-trip-by-id-output";
+import { FindTripRequestByIdInput as FindTripByIdInput } from "../input/find-by-id";
+import { FindTripRequestByIdOutput as FindTripByIdOutput } from "../output/find-by-id";
 
 export class FindTripByIdUseCase implements UseCase<FindTripByIdInput, FindTripByIdOutput> {
     constructor(
