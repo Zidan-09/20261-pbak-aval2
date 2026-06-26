@@ -1,4 +1,4 @@
-import { InvalidStatusError } from "./error/invalidStatusError";
+import { InvalidStatusError } from "./error/invalid-status-error";
 import { TripStatus } from "./tripStatus";
 
 export class Trip {

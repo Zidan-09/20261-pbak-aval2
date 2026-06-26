@@ -4,4 +4,7 @@ export default defineConfig({
   test: {
     environment: "node",
   },
+  resolve: {
+    tsconfigPaths: true
+  }
 });
