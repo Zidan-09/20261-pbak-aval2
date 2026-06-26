@@ -14,6 +14,7 @@ export class CreateTripRequestUseCase implements UseCase<
 
   execute(input: CreateTripRequestInput): CreateTripRequestOutput {
     // TODO: Validar se data de partida coincide em um feriado nacial através do futuro HollidayRepository (Interface Domínio)
+    // TODO: Validar se a entrada recebida já tem cadastro no banco
 
     this.validateReturnDate(input.departureAt, input.returnAt);
 

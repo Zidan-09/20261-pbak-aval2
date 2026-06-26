@@ -51,7 +51,7 @@ describe("CancelTripRequestByIdUseCase Unit Tests", () => {
         expect(output).toEqual({ trip: expected });
     });
 
-    it("should throw an error when trip not found", () => {
+    it("should throw an error when trip was not founded", () => {
         const mockTripId = "any-invalid-uuid";
 
         tripRepositoryMock.findById.mockReturnValue(null);
