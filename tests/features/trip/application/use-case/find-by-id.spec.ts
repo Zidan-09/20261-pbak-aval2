@@ -28,7 +28,7 @@ describe("FindTripByIdUseCase Unit Tests", () => {
         sut = new FindTripByIdUseCase(tripRepositoryMock);
     });
 
-    it("deve retornar uma viagem com sucesso quando o id existente for fornecido", () => {
+    it("should return a trip correctly when uuid is valid", () => {
         const mockTripId = "any-valid-uuid";
         
         const mockTrip = createMockTrip({ 
@@ -47,7 +47,7 @@ describe("FindTripByIdUseCase Unit Tests", () => {
         expect(output).toEqual({ trip: mockTrip });
     });
 
-    it("deve lançar um TripRequestNotFoundError quando a viagem não for encontrada", () => {
+    it("should throw a TripRequestNotFoundError when trip was not founded", () => {
         const mockTripId = "non-existent-id";
         
         tripRepositoryMock.findById.mockReturnValue(null);
@@ -60,7 +60,7 @@ describe("FindTripByIdUseCase Unit Tests", () => {
         expect(tripRepositoryMock.findById).toHaveBeenCalledWith(mockTripId);
     });
 
-    it("deve repassar qualquer erro inesperado lançado pelo TripRepository", () => {
+    it("should throw any error of repository", () => {
         const mockTripId = "any-id";
         const dbError = new Error("Database connection timeout");
         
