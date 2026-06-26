@@ -1,6 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { type Mocked } from "vitest";
-import { FindTripByIdUseCase } from "#/features/trip/application/use-case/find-trip-by-id-use-case.js";
+import { beforeEach, describe, expect, it, vi, type Mocked } from "vitest";
+import { FindTripByIdUseCase } from "#/features/trip/application/use-case/find-by-id.ts";
 import { TripRepository } from "#/features/trip/domain/repository/trip-repository.js";
 import { TripRequestNotFoundError } from "#/features/trip/domain/error/trip-request-not-found-error.js";
 import { Trip } from "#/features/trip/domain/trip.js";
@@ -8,6 +7,7 @@ import { Trip } from "#/features/trip/domain/trip.js";
 describe("FindTripByIdUseCase Unit Tests", () => {
     let tripRepositoryMock: Mocked<TripRepository>;
     let sut: FindTripByIdUseCase;
+
     const createMockTrip = (fields: Record<string, any>): Trip => {
         return {
             id: "any-id",
