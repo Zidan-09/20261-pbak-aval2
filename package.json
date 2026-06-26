@@ -1,13 +1,13 @@
 {
   "name": "20261-pbak-aval2",
   "version": "1.0.0",
-  "description": "",
+  "description": "REST API for managing institutional travel requests in a university context. It supports creating, listing, and canceling requests, with validation rules and integration with a public holidays API to block requests on national holidays.",
   "main": "server.js",
   "scripts": {
     "dev": "npx tsx watch src/server.ts",
     "start": "node dist/server.js",
     "build": "rimraf dist && npx tsc",
-    "init:db": "prisma migrate deploy && tsx prisma/seed.ts",
+    "init:db": "npx prisma db push && npx prisma generate && npx tsx prisma/seed.ts",
     "test": "vitest run"
   },
   "repository": {
@@ -30,10 +30,14 @@
     "#/*": "./src/*"
   },
   "dependencies": {
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
     "axios": "^1.18.1",
     "dotenv": "^17.4.2",
     "eslint": "^10.5.0",
     "fastify": "^5.8.5",
+    "pg": "^8.22.0",
+    "prisma": "^7.8.0",
     "typescript": "^6.0.3",
     "zod": "^4.4.3"
   },

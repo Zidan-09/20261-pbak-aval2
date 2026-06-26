@@ -1,0 +1,54 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Trip {
+  id             String     @id @default(uuid()) @db.Uuid
+  requesterName  String     @map("requester_name") @db.VarChar(255)
+
+  origin         String     @db.VarChar(255)
+  destination    String     @db.VarChar(255)
+
+  departureAt    DateTime   @map("departure_at")
+  returnAt       DateTime   @map("return_at")
+
+  purpose        String     @map("purpose")
+
+  passengerCount Int        @map("passenger_count")
+
+  status         TripStatus
+
+  createdAt      DateTime   @default(now()) @map("created_at")
+
+  @@index([status])
+  @@index([departureAt])
+  @@map("trip")
+}
+
+model Holiday {
+  id        String   @id @default(uuid()) @db.Uuid
+
+  date      DateTime @db.Date
+
+  name      String   @db.VarChar(255)
+
+  type      String   @db.VarChar(50)
+
+  weekday   String   @db.VarChar(50)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([date, name])
+  @@index([date])
+  @@map("holiday")
+}
+
+enum TripStatus {
+  PENDING
+  CANCELLED
+}
