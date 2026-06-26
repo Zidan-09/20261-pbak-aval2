@@ -24,6 +24,12 @@
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "skipLibCheck": true,
+    "paths": {
+      "#/*": ["./src/*"]
+    }
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "test/**/*.ts"],
+  "include": [
+    "src/**/*.ts", 
+    "src/**/*.d.ts", 
+  ],
 }
