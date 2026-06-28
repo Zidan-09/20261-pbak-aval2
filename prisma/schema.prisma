@@ -39,10 +39,6 @@ model Holiday {
 
   type      String   @db.VarChar(50)
 
-  weekday   String   @db.VarChar(50)
-
-  createdAt DateTime @default(now()) @map("created_at")
-
   @@unique([date, name])
   @@index([date])
   @@map("holiday")
