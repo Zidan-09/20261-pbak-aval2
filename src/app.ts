@@ -11,9 +11,7 @@ export function buildApp() {
 
   app.get("/health", async () => {
     return {
-      data: {
-        status: "ok",
-      },
+      status: "ok",
     };
   });
 
