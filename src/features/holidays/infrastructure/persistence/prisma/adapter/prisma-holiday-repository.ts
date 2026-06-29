@@ -8,6 +8,16 @@ export class PrismaHolidayRepository implements HolidayRepository {
         private readonly prisma: PrismaClient
     ) {}
 
+    async existsByDate(date: Date): Promise<boolean> {
+        const holiday = await this.prisma.holiday.findFirst({
+            where: {
+                date
+            }
+        });
+
+        return holiday !== null;
+    }
+
     async get(year: number): Promise<Holiday[]> {
         const holidays = await this.prisma.holiday.findMany({
             where: {
