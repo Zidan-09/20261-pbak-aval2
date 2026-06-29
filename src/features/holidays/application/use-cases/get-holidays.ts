@@ -29,7 +29,7 @@ export class GetHolidaysUseCase implements UseCase<GetHolidaysInput, Promise<Get
 
     private shouldSync(
         year: number, 
-        sync?: HolidaySync
+        sync: HolidaySync | null
     ): boolean {
         if (!sync) return true;
 
