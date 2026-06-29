@@ -1,4 +1,5 @@
 import Fastify from "fastify";
+import { holidayRoutes } from "./features/holidays/infrastructure/routes/get-holidays-route";
 
 export function buildApp() {
     const app = Fastify({
@@ -13,6 +14,10 @@ export function buildApp() {
             }
         }
     });
+
+    app.register(holidayRoutes, {
+        prefix: "/holidays"
+    })
 
     return app;
 }

@@ -39,13 +39,17 @@ model Holiday {
 
   type      String   @db.VarChar(50)
 
-  weekday   String   @db.VarChar(50)
-
-  createdAt DateTime @default(now()) @map("created_at")
-
   @@unique([date, name])
   @@index([date])
   @@map("holiday")
+}
+
+model HolidaySync {
+  year      Int     @id
+  
+  syncedAt  DateTime @default(now())
+
+  @@map("holiday_sync")
 }
 
 enum TripStatus {
