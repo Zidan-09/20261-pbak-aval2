@@ -1,6 +1,6 @@
 import { FastifyInstance } from "fastify";
 import { ZodError } from "zod";
-import { DomainError } from "../domain/domainError";
+import { DomainError } from "../domain/error/domainError";
 
 const errorStatusMap: Record<string, number> = {
   VALIDATION_ERROR: 400,
