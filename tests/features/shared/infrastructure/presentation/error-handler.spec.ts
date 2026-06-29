@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import Fastify from "fastify";
 import { ZodError } from "zod";
 import { errorHandler } from "../../../../../src/shared/infrastructure/presentation/error-handler";
-import { DomainError } from "../../../../../src/shared/domain/error/domainError";
+import { DomainError } from "../../../../../src/shared/domain/error/domain-error";
 
 class FakeNotFoundError extends DomainError {
   constructor() {

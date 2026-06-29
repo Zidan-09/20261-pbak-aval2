@@ -1,6 +1,6 @@
 import { FastifyInstance } from "fastify";
 import { ZodError } from "zod";
-import { DomainError } from "../../domain/error/domainError";
+import { DomainError } from "../../domain/error/domain-error";
 
 type ErrorCode =
   | "VALIDATION_ERROR"
