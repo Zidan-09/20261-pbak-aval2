@@ -44,6 +44,14 @@ model Holiday {
   @@map("holiday")
 }
 
+model HolidaySync {
+  year      Int     @id
+  
+  syncedAt  DateTime @default(now())
+
+  @@map("holiday_sync")
+}
+
 enum TripStatus {
   PENDING
   CANCELLED

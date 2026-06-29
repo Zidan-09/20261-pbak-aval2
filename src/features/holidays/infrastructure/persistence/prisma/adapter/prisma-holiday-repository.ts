@@ -27,7 +27,7 @@ export class PrismaHolidayRepository implements HolidayRepository {
     async save(holiday: Holiday): Promise<void> {
         const data = HolidayMapper.toPersistence(holiday);
 
-        await this.prisma.holiday.upsert({
+        await this.prisma.holiday.upsert({  
             where: {
                 date_name: {
                     date: holiday.getDate(),
