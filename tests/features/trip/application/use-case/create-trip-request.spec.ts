@@ -1,11 +1,14 @@
 import { beforeEach, describe, expect, it, vi, type Mocked } from "vitest";
 
 import { CreateTripRequestUseCase } from "#/features/trip/application/use-case/create-trip-request.ts";
+import { CreateTripRequestInput } from "#/features/trip/application/input/create-trip-request.ts";
+
 import { TripRepository } from "#/features/trip/domain/repository/trip-repository.ts";
 import { HolidayRepository } from "#/features/holidays/domain/repository/holiday-repository.ts";
-import { CreateTripRequestInput } from "#/features/trip/application/input/create-trip-request.ts";
-import { TripStatus } from "#/features/trip/domain/tripStatus.ts";
+import { HolidaySyncService } from "#/features/holidays/application/service/holiday-sync-service.ts";
+
 import { Trip } from "#/features/trip/domain/trip.ts";
+import { TripStatus } from "#/features/trip/domain/tripStatus.ts";
 
 import { HolidayTripNotAllowedError } from "#/features/trip/domain/error/holiday-trip-not-allowed-error.ts";
 import { InvalidPassengerCountError } from "#/features/trip/domain/error/invalid-passenger-count-error.ts";
@@ -13,36 +16,36 @@ import { ReturnDateBeforeDepartureError } from "#/features/trip/domain/error/ret
 import { SameOriginDestinationError } from "#/features/trip/domain/error/same-origin-destination-error.ts";
 import { TripAlreadyExistsError } from "#/features/trip/domain/error/trip-already-exists-error.ts";
 
-
 describe("CreateTripRequestUseCase Unit Tests", () => {
-
     let tripRepositoryMock: Mocked<TripRepository>;
     let holidayRepositoryMock: Mocked<HolidayRepository>;
+    let holidaySyncServiceMock: Mocked<HolidaySyncService>;
 
     let sut: CreateTripRequestUseCase;
-
 
     beforeEach(() => {
         tripRepositoryMock = {
             save: vi.fn(),
-            checkIfExists: vi.fn()
+            checkIfExists: vi.fn(),
         } as unknown as Mocked<TripRepository>;
 
-
         holidayRepositoryMock = {
-            existsByDate: vi.fn()
+            existsByDate: vi.fn(),
         } as unknown as Mocked<HolidayRepository>;
 
+        holidaySyncServiceMock = {
+            ensureSync: vi.fn().mockResolvedValue(undefined),
+        } as unknown as Mocked<HolidaySyncService>;
 
         sut = new CreateTripRequestUseCase(
             tripRepositoryMock,
-            holidayRepositoryMock
+            holidayRepositoryMock,
+            holidaySyncServiceMock,
         );
     });
 
-
     const createInput = (
-        overrides?: Partial<CreateTripRequestInput>
+        overrides?: Partial<CreateTripRequestInput>,
     ): CreateTripRequestInput => ({
         requesterName: "Samuel Nascimento",
         origin: "Teresina",
@@ -51,134 +54,112 @@ describe("CreateTripRequestUseCase Unit Tests", () => {
         returnAt: new Date("2026-07-05T10:00:00.000Z"),
         purpose: "Academic event",
         passengerCount: 10,
-        ...overrides
+        ...overrides,
     });
 
-
     it("should create a trip correctly", async () => {
+        tripRepositoryMock.checkIfExists.mockResolvedValue(false);
+        holidayRepositoryMock.existsByDate.mockResolvedValue(false);
 
-        tripRepositoryMock.checkIfExists
-            .mockResolvedValue(false);
+        const output = await sut.execute(createInput());
 
-        holidayRepositoryMock.existsByDate
-            .mockResolvedValue(false);
+        expect(holidaySyncServiceMock.ensureSync)
+            .toHaveBeenCalledWith(2026);
 
-
-        const output = await sut.execute(
-            createInput()
-        );
-
-
-        expect(output.trip)
-            .toBeInstanceOf(Trip);
-
+        expect(output.trip).toBeInstanceOf(Trip);
 
         expect(output.trip.getStatus())
             .toBe(TripStatus.PENDING);
-
 
         expect(tripRepositoryMock.save)
             .toHaveBeenCalledWith(output.trip);
     });
 
-
     it("should throw TripAlreadyExistsError when trip already exists", async () => {
-
-        tripRepositoryMock.checkIfExists
-            .mockResolvedValue(true);
-
+        tripRepositoryMock.checkIfExists.mockResolvedValue(true);
 
         await expect(
-            sut.execute(createInput())
-        )
-        .rejects
-        .toBeInstanceOf(TripAlreadyExistsError);
+            sut.execute(createInput()),
+        ).rejects.toBeInstanceOf(TripAlreadyExistsError);
 
+        expect(holidaySyncServiceMock.ensureSync)
+            .toHaveBeenCalledWith(2026);
 
         expect(tripRepositoryMock.save)
-            .not
-            .toHaveBeenCalled();
+            .not.toHaveBeenCalled();
     });
-
 
     it("should throw HolidayTripNotAllowedError when departure date is holiday", async () => {
-
-        tripRepositoryMock.checkIfExists
-            .mockResolvedValue(false);
-
-        holidayRepositoryMock.existsByDate
-            .mockResolvedValue(true);
-
+        tripRepositoryMock.checkIfExists.mockResolvedValue(false);
+        holidayRepositoryMock.existsByDate.mockResolvedValue(true);
 
         await expect(
-            sut.execute(createInput())
-        )
-        .rejects
-        .toBeInstanceOf(HolidayTripNotAllowedError);
+            sut.execute(createInput()),
+        ).rejects.toBeInstanceOf(HolidayTripNotAllowedError);
 
+        expect(holidaySyncServiceMock.ensureSync)
+            .toHaveBeenCalledWith(2026);
 
         expect(tripRepositoryMock.save)
-            .not
-            .toHaveBeenCalled();
+            .not.toHaveBeenCalled();
     });
 
-
     it("should throw ReturnDateBeforeDepartureError when return date is before departure", async () => {
+        tripRepositoryMock.checkIfExists.mockResolvedValue(false);
+        holidayRepositoryMock.existsByDate.mockResolvedValue(false);
 
         await expect(
             sut.execute(
                 createInput({
                     departureAt: new Date("2026-07-05"),
-                    returnAt: new Date("2026-07-01")
-                })
-            )
-        )
-        .rejects
-        .toBeInstanceOf(ReturnDateBeforeDepartureError);
+                    returnAt: new Date("2026-07-01"),
+                }),
+            ),
+        ).rejects.toBeInstanceOf(ReturnDateBeforeDepartureError);
 
+        expect(holidaySyncServiceMock.ensureSync)
+            .toHaveBeenCalledWith(2026);
 
         expect(tripRepositoryMock.save)
-            .not
-            .toHaveBeenCalled();
+            .not.toHaveBeenCalled();
     });
 
-
     it("should throw InvalidPassengerCountError when passenger count is invalid", async () => {
+        tripRepositoryMock.checkIfExists.mockResolvedValue(false);
+        holidayRepositoryMock.existsByDate.mockResolvedValue(false);
 
         await expect(
             sut.execute(
                 createInput({
-                    passengerCount: 0
-                })
-            )
-        )
-        .rejects
-        .toBeInstanceOf(InvalidPassengerCountError);
+                    passengerCount: 0,
+                }),
+            ),
+        ).rejects.toBeInstanceOf(InvalidPassengerCountError);
 
+        expect(holidaySyncServiceMock.ensureSync)
+            .toHaveBeenCalledWith(2026);
 
         expect(tripRepositoryMock.save)
-            .not
-            .toHaveBeenCalled();
+            .not.toHaveBeenCalled();
     });
 
-
     it("should throw SameOriginDestinationError when origin equals destination", async () => {
+        tripRepositoryMock.checkIfExists.mockResolvedValue(false);
+        holidayRepositoryMock.existsByDate.mockResolvedValue(false);
 
         await expect(
             sut.execute(
                 createInput({
                     origin: "Teresina",
-                    destination: "teresina"
-                })
-            )
-        )
-        .rejects
-        .toBeInstanceOf(SameOriginDestinationError);
+                    destination: "teresina",
+                }),
+            ),
+        ).rejects.toBeInstanceOf(SameOriginDestinationError);
 
+        expect(holidaySyncServiceMock.ensureSync)
+            .toHaveBeenCalledWith(2026);
 
         expect(tripRepositoryMock.save)
-            .not
-            .toHaveBeenCalled();
+            .not.toHaveBeenCalled();
     });
-
 });
