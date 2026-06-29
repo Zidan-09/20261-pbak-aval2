@@ -1,18 +1,7 @@
 import { FastifyInstance } from "fastify";
 import { ZodError } from "zod";
 import { DomainError } from "../../domain/error/domain-error";
-
-type ErrorCode =
-  | "VALIDATION_ERROR"
-  | "TRIP_REQUEST_NOT_FOUND"
-  | "TRIP_REQUEST_ALREADY_CANCELED"
-  | "HOLIDAY_TRIP_NOT_ALLOWED"
-  | "HOLIDAYS_API_UNAVAILABLE"
-  | "INTERNAL_SERVER_ERROR"
-  | "INVALID_PASSENGER_COUNT"
-  | "RETURN_DATE_BEFORE_DEPARTURE"
-  | "SAME_ORIGIN_DESTINATION"
-  | "TRIP_ALREADY_EXISTS";
+import { ErrorCode } from "./error-codes";
 
 const errorStatusMap: Record<ErrorCode, number> = {
   VALIDATION_ERROR: 400,
