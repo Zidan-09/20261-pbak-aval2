@@ -16,7 +16,6 @@ export function makeGetHolidayController() {
 
     const useCase = new GetHolidaysUseCase(
         repository,
-        syncRepository,
         holidaySyncService
     );
 
