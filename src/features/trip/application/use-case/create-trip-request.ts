@@ -70,12 +70,12 @@ export class CreateTripRequestUseCase implements UseCase<
   }
 
   private validateReturnDate(departureAt: Date, returnAt: Date) {
-    if (returnAt.getTime() < departureAt.getTime())
+    if (returnAt.getTime() <= departureAt.getTime())
       throw new ReturnDateBeforeDepartureError();
   }
 
   private validatePassengerCount(passengerCount: number) {
-    if (passengerCount <= 0) throw new InvalidPassengerCountError();
+    if (passengerCount < 0) throw new InvalidPassengerCountError();
   }
 
   private validateTripDestination(origin: string, destination: string) {
