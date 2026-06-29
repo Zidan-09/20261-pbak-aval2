@@ -75,7 +75,7 @@ export class CreateTripRequestUseCase implements UseCase<
   }
 
   private validatePassengerCount(passengerCount: number) {
-    if (passengerCount < 0) throw new InvalidPassengerCountError();
+    if (passengerCount <= 0) throw new InvalidPassengerCountError();
   }
 
   private validateTripDestination(origin: string, destination: string) {
