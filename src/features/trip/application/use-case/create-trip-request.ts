@@ -70,7 +70,7 @@ export class CreateTripRequestUseCase implements UseCase<
   }
 
   private validateReturnDate(departureAt: Date, returnAt: Date) {
-    if (returnAt.getTime() < departureAt.getTime())
+    if (returnAt.getTime() <= departureAt.getTime())
       throw new ReturnDateBeforeDepartureError();
   }
 
