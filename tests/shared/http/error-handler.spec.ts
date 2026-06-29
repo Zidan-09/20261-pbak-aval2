@@ -16,7 +16,6 @@ describe("Error Handler", () => {
     app.setErrorHandler(errorHandler);
 
     app.get("/test-zod", async () => {
-      // Simulando uma falha de validação do Zod
       throw new ZodError([]);
     });
 
@@ -37,7 +36,6 @@ describe("Error Handler", () => {
     app.setErrorHandler(errorHandler);
 
     app.get("/test-domain", async () => {
-      // O colega de Casos de Uso faria isso na aplicação:
       throw new FakeNotFoundError();
     });
 
@@ -58,14 +56,12 @@ describe("Error Handler", () => {
     app.setErrorHandler(errorHandler);
 
     app.get("/test-internal", async () => {
-      // Um erro quebrou a aplicação do nada (ex: banco caiu, erro de sintaxe)
       throw new Error("Explodiu o banco de dados!");
     });
 
     const response = await app.inject({ method: "GET", url: "/test-internal" });
 
     expect(response.statusCode).toBe(500);
-    // Garante que a mensagem sensível 'Explodiu o banco de dados!' não vaze para o cliente
     expect(response.json()).toEqual({
       success: false,
       error: {

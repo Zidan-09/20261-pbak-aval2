@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import Fastify from "fastify";
-import { successHandler } from "../../../src/shared/http/success-handler"; // Ajuste o caminho se necessário
+import { successHandler } from "../../../src/shared/http/success-handler";
 
 describe("Success Handler (preSerialization hook)", () => {
   it("must encapsulate the success response in the standard format", async () => {
@@ -18,7 +18,6 @@ describe("Success Handler (preSerialization hook)", () => {
     });
 
     expect(response.statusCode).toBe(200);
-    // Verifica se envelopou no formato da prova
     expect(response.json()).toEqual({
       success: true,
       data: { id: 1, name: "John Doe" },
@@ -42,7 +41,6 @@ describe("Success Handler (preSerialization hook)", () => {
     });
 
     expect(response.statusCode).toBe(200);
-    // Verifica se manteve intacto
     expect(response.json()).toEqual({
       success: false,
       error: { code: "ANY_ERROR", message: "Any message" },
