@@ -1,4 +1,4 @@
-import { DomainError } from "../../../../shared/domain/domainError";
+import { DomainError } from "../../../../shared/domain/error/domainError";
 
 export class TripRequestNotFoundError extends DomainError {
     constructor(message: string) {

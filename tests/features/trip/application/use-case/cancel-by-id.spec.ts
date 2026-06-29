@@ -19,7 +19,7 @@ describe("CancelTripRequestByIdUseCase Unit Tests", () => {
             "Academic event",
             10,
             TripStatus.PENDING,
-            new Date()
+            new Date(2026, 5, 28)
         );
     };
 
