@@ -3,12 +3,14 @@ import { CancelTripRequestByIdUseCase } from "#/features/trip/application/use-ca
 import { TripRepository } from "#/features/trip/domain/repository/trip-repository.js";
 import { TripStatus } from "#/features/trip/domain/tripStatus.js";
 import { Trip } from "#/features/trip/domain/trip.js";
+import { TripRequestNotFoundError } from "#/features/trip/domain/error/trip-not-found-error.js";
+import { TripRequestAlreadyCanceledError } from "../../../../../src/features/trip/domain/error/trip-already-canceled-error";
 
 describe("CancelTripRequestByIdUseCase Unit Tests", () => {
     let tripRepositoryMock: Mocked<TripRepository>;
     let sut: CancelTripRequestByIdUseCase;
 
-    const createMockTrip = (fields?: Partial<Trip>): Trip => {
+    const createMockTrip = (): Trip => {
         return new Trip(
             "any-id",
             "Requester Name",
@@ -29,54 +31,80 @@ describe("CancelTripRequestByIdUseCase Unit Tests", () => {
             save: vi.fn(),
         } as unknown as Mocked<TripRepository>;
 
-        sut = new CancelTripRequestByIdUseCase(tripRepositoryMock);
+        sut = new CancelTripRequestByIdUseCase(
+            tripRepositoryMock
+        );
     });
 
-    it("should cancel a trip correctly", () => {
+
+    it("should cancel a trip correctly", async () => {
         const mockTripId = "any-valid-uuid";
-        
+
         const mockTrip = createMockTrip();
 
-        tripRepositoryMock.findById.mockReturnValue(mockTrip);
+        tripRepositoryMock.findById
+            .mockResolvedValue(mockTrip);
 
-        const input = { tripRequestId: mockTripId };
+        tripRepositoryMock.save
+            .mockResolvedValue();
 
-        const expected = createMockTrip();
-        expected.changeStatus(TripStatus.CANCELED);
 
-        const output = sut.execute(input);
+        const output = await sut.execute({
+            tripRequestId: mockTripId
+        });
 
-        expect(tripRepositoryMock.findById).toHaveBeenCalledTimes(1);
-        expect(tripRepositoryMock.findById).toHaveBeenCalledWith(mockTripId);
-        expect(output).toEqual({ trip: expected });
+
+        expect(tripRepositoryMock.findById)
+            .toHaveBeenCalledWith(mockTripId);
+
+        expect(tripRepositoryMock.save)
+            .toHaveBeenCalledWith(mockTrip);
+
+        expect(output.trip.getStatus())
+            .toBe(TripStatus.CANCELED);
     });
 
-    it("should throw an error when trip was not founded", () => {
-        const mockTripId = "any-invalid-uuid";
 
-        tripRepositoryMock.findById.mockReturnValue(null);
+    it("should throw TripRequestNotFoundError when trip was not found", async () => {
+        tripRepositoryMock.findById
+            .mockResolvedValue(null);
 
-        const input = { tripRequestId: mockTripId };
 
-        expect(() => sut.execute(input))
-            .toThrow("The Trip was not found");
+        await expect(
+            sut.execute({
+                tripRequestId: "any-invalid-uuid"
+            })
+        )
+        .rejects
+        .toBeInstanceOf(TripRequestNotFoundError);
 
-        expect(tripRepositoryMock.save).not.toHaveBeenCalled();
+
+        expect(tripRepositoryMock.save)
+            .not
+            .toHaveBeenCalled();
     });
 
-    it("should throw an error when trip already been canceled", () => {
-        const mockTripId = "any-valid-uuid";
-        
+
+    it("should throw error when trip is already canceled", async () => {
         const mockTrip = createMockTrip();
 
-        tripRepositoryMock.findById.mockReturnValue(mockTrip);
-        mockTrip.changeStatus(TripStatus.CANCELED);
+        mockTrip.cancel();
 
-        const input = { tripRequestId: mockTripId };
+        tripRepositoryMock.findById
+            .mockResolvedValue(mockTrip);
 
-        expect(() => sut.execute(input))
-            .toThrow("can not change status to be the same");
 
-        expect(tripRepositoryMock.save).not.toHaveBeenCalled();
+        await expect(
+            sut.execute({
+                tripRequestId: "any-valid-uuid"
+            })
+        )
+        .rejects
+        .toBeInstanceOf(TripRequestAlreadyCanceledError);
+
+
+        expect(tripRepositoryMock.save)
+            .not
+            .toHaveBeenCalled();
     });
 });

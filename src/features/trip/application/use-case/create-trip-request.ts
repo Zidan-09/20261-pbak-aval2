@@ -1,20 +1,34 @@
+import { HolidaySyncService } from "#/features/holidays/application/service/holiday-sync-service";
+import { HolidayRepository } from "#/features/holidays/domain/repository/holiday-repository";
 import { UseCase } from "#/shared/application/use-case/usecase";
+import { HolidayTripNotAllowedError } from "../../domain/error/holiday-trip-not-allowed-error";
+import { InvalidPassengerCountError } from "../../domain/error/invalid-passenger-count-error";
+import { ReturnDateBeforeDepartureError } from "../../domain/error/return-date-before-departure-error";
+import { SameOriginDestinationError } from "../../domain/error/same-origin-destination-error";
+import { TripAlreadyExistsError } from "../../domain/error/trip-already-exists-error";
 import { TripRepository } from "../../domain/repository/trip-repository";
 import { Trip } from "../../domain/trip";
-import { TripStatus } from "../../domain/tripStatus";
 import { CreateTripRequestInput } from "../input/create-trip-request";
 import { CreateTripRequestOutput } from "../output/create-trip-request";
-import { randomUUID } from "crypto"; // Remover quando o método create em Trip for implementado
 
 export class CreateTripRequestUseCase implements UseCase<
   CreateTripRequestInput,
-  CreateTripRequestOutput
+  Promise<CreateTripRequestOutput>
 > {
-  constructor(private readonly tripRepository: TripRepository) {}
+  constructor(
+    private readonly tripRepository: TripRepository,
+    private readonly holidayRepository: HolidayRepository,
+    private readonly holidaySyncService: HolidaySyncService,
+  ) {}
 
-  execute(input: CreateTripRequestInput): CreateTripRequestOutput {
-    // TODO: Validar se data de partida coincide em um feriado nacial através do futuro HollidayRepository (Interface Domínio)
-    // TODO: Validar se a entrada recebida já tem cadastro no banco
+  async execute(
+    input: CreateTripRequestInput,
+  ): Promise<CreateTripRequestOutput> {
+    await this.ensureHolidaySync(input.departureAt);
+
+    await this.validateIfAlreadyRegistered(input);
+
+    await this.validateDate(input.departureAt);
 
     this.validateReturnDate(input.departureAt, input.returnAt);
 
@@ -22,9 +36,7 @@ export class CreateTripRequestUseCase implements UseCase<
 
     this.validateTripDestination(input.origin, input.destination);
 
-    // TODO: Implementar métodos estáticos para instanciação e restauração na classe Trip
-    const trip = new Trip(
-      randomUUID(),
+    const trip = Trip.create(
       input.requesterName,
       input.origin,
       input.destination,
@@ -32,38 +44,46 @@ export class CreateTripRequestUseCase implements UseCase<
       input.returnAt,
       input.purpose,
       input.passengerCount,
-      TripStatus.PENDING,
-      new Date(),
     );
 
-    this.tripRepository.save(trip);
+    await this.tripRepository.save(trip);
 
-    return this.buildOutput(trip);
+    return { trip };
+  }
+
+  private async validateIfAlreadyRegistered(input: CreateTripRequestInput) {
+    const exists = await this.tripRepository.checkIfExists(
+      input.requesterName,
+      input.origin,
+      input.destination,
+      input.departureAt,
+      input.returnAt,
+    );
+
+    if (exists) throw new TripAlreadyExistsError();
+  }
+
+  private async validateDate(departureAt: Date) {
+    const exists = await this.holidayRepository.existsByDate(departureAt);
+
+    if (exists) throw new HolidayTripNotAllowedError();
   }
 
   private validateReturnDate(departureAt: Date, returnAt: Date) {
-    // TODO: Implementar Erro personalizado para essa situação
     if (returnAt.getTime() < departureAt.getTime())
-      throw new Error("A data de retorno não pode ser antes da data de saída");
+      throw new ReturnDateBeforeDepartureError();
   }
 
   private validatePassengerCount(passengerCount: number) {
-    // TODO: Implementar Erro personalizado para essa situação
-    if (passengerCount <= 0)
-      throw new Error("O número de passageiros não pode ser menor que 0");
+    if (passengerCount <= 0) throw new InvalidPassengerCountError();
   }
 
   private validateTripDestination(origin: string, destination: string) {
-    // TODO: Implementar Erro personalizado para essa situação
-    if (
-        origin.trim().toLowerCase() ===
-        destination.trim().toLowerCase()
-    ) throw new Error("O destino não pode ser o mesmo do local de partida")
+    if (origin.trim().toLowerCase() === destination.trim().toLowerCase())
+      throw new SameOriginDestinationError();
   }
 
-  private buildOutput(trip: Trip): CreateTripRequestOutput {
-    return {
-      trip: trip,
-    };
+  private async ensureHolidaySync(date: Date): Promise<void> {
+    await this.holidaySyncService.ensureSync(date.getFullYear());
   }
 }

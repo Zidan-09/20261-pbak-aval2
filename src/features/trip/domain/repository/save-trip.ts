@@ -1,5 +1,5 @@
 import { Trip } from "../trip";
 
 export interface SaveTrip {
-    save(trip: Trip): void;
+    save(trip: Trip): Promise<void>;
 }

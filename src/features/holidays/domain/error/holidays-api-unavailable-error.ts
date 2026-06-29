@@ -1,4 +1,4 @@
-import { DomainError } from "#/shared/domain/error/domainError";
+import { DomainError } from "#/shared/domain/error/domain-error";
 
 export class HolidaysApiUnavailableError extends DomainError {
     constructor() {
