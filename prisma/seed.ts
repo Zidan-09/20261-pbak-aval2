@@ -2,7 +2,7 @@ import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient, TripStatus } from "#/generated/prisma/client.js";
 
-const connectionString = process.env["DATABASE_URL"] || "postgresql://postgres:postgres@localhost:5432/trip_requests_db";
+const connectionString = process.env["DATABASE_URL"];
 
 const adapter = new PrismaPg({ connectionString });
 const prisma = new PrismaClient({ adapter });

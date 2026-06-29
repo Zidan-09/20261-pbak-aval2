@@ -1,76 +1,122 @@
 import { beforeEach, describe, expect, it, vi, type Mocked } from "vitest";
+
 import { FindTripByIdUseCase } from "#/features/trip/application/use-case/find-by-id.ts";
-import { TripRepository } from "#/features/trip/domain/repository/trip-repository.js";
-import { TripRequestNotFoundError } from "#/features/trip/domain/error/trip-request-not-found-error.js";
-import { Trip } from "#/features/trip/domain/trip.js";
+import { TripRepository } from "#/features/trip/domain/repository/trip-repository.ts";
+import { TripRequestNotFoundError } from "#/features/trip/domain/error/trip-not-found-error.ts";
+import { Trip } from "#/features/trip/domain/trip.ts";
+import { TripStatus } from "#/features/trip/domain/tripStatus.ts";
+
 
 describe("FindTripByIdUseCase Unit Tests", () => {
+
     let tripRepositoryMock: Mocked<TripRepository>;
     let sut: FindTripByIdUseCase;
 
-    const createMockTrip = (fields: Record<string, any>): Trip => {
-        return {
-            id: "any-id",
-            destination: "Default Destination",
-            requesterName: "Default Name",
-            origin: "Default Origin",
-            departureAt: new Date(),
-            returnAt: new Date(),
-            ...fields,
-        } as unknown as Trip;
+
+    const createMockTrip = (): Trip => {
+        return new Trip(
+            "any-id",
+            "Samuel Nascimento",
+            "Teresina",
+            "Fortaleza",
+            new Date("2026-07-01T10:00:00.000Z"),
+            new Date("2026-07-05T10:00:00.000Z"),
+            "Academic event",
+            10,
+            TripStatus.PENDING,
+            new Date()
+        );
     };
+
 
     beforeEach(() => {
         tripRepositoryMock = {
             findById: vi.fn(),
         } as unknown as Mocked<TripRepository>;
 
-        sut = new FindTripByIdUseCase(tripRepositoryMock);
+
+        sut = new FindTripByIdUseCase(
+            tripRepositoryMock
+        );
     });
 
-    it("should return a trip correctly when uuid is valid", () => {
+
+    it("should return a trip correctly when uuid is valid", async () => {
+
         const mockTripId = "any-valid-uuid";
-        
-        const mockTrip = createMockTrip({ 
-            id: mockTripId, 
-            destination: "Paris" 
+
+        const mockTrip = createMockTrip();
+
+
+        tripRepositoryMock.findById
+            .mockResolvedValue(mockTrip);
+
+
+        const output = await sut.execute({
+            tripRequestId: mockTripId
         });
 
-        tripRepositoryMock.findById.mockReturnValue(mockTrip);
 
-        const input = { tripRequestId: mockTripId };
+        expect(tripRepositoryMock.findById)
+            .toHaveBeenCalledTimes(1);
 
-        const output = sut.execute(input);
 
-        expect(tripRepositoryMock.findById).toHaveBeenCalledTimes(1);
-        expect(tripRepositoryMock.findById).toHaveBeenCalledWith(mockTripId);
-        expect(output).toEqual({ trip: mockTrip });
+        expect(tripRepositoryMock.findById)
+            .toHaveBeenCalledWith(mockTripId);
+
+
+        expect(output)
+            .toEqual({
+                trip: mockTrip
+            });
     });
 
-    it("should throw a TripRequestNotFoundError when trip was not founded", () => {
+
+    it("should throw TripRequestNotFoundError when trip was not found", async () => {
+
         const mockTripId = "non-existent-id";
-        
-        tripRepositoryMock.findById.mockReturnValue(null);
 
-        const input = { tripRequestId: mockTripId };
 
-        expect(() => sut.execute(input)).throw(TripRequestNotFoundError);
-        
-        expect(tripRepositoryMock.findById).toHaveBeenCalledTimes(1);
-        expect(tripRepositoryMock.findById).toHaveBeenCalledWith(mockTripId);
+        tripRepositoryMock.findById
+            .mockResolvedValue(null);
+
+
+        await expect(
+            sut.execute({
+                tripRequestId: mockTripId
+            })
+        )
+        .rejects
+        .toBeInstanceOf(TripRequestNotFoundError);
+
+
+        expect(tripRepositoryMock.findById)
+            .toHaveBeenCalledWith(mockTripId);
     });
 
-    it("should throw any error of repository", () => {
-        const mockTripId = "any-id";
-        const dbError = new Error("Database connection timeout");
-        
-        tripRepositoryMock.findById.mockImplementation(() => {
-            throw dbError;
-        });
 
-        const input = { tripRequestId: mockTripId };
+    it("should propagate repository errors", async () => {
 
-        expect(() => sut.execute(input)).throw("Database connection timeout");
-        expect(tripRepositoryMock.findById).toHaveBeenCalledTimes(1);
+        const dbError = new Error(
+            "Database connection timeout"
+        );
+
+
+        tripRepositoryMock.findById
+            .mockRejectedValue(dbError);
+
+
+        await expect(
+            sut.execute({
+                tripRequestId: "any-id"
+            })
+        )
+        .rejects
+        .toThrow("Database connection timeout");
+
+
+        expect(tripRepositoryMock.findById)
+            .toHaveBeenCalledTimes(1);
     });
+
 });
