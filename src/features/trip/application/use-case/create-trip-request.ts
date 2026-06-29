@@ -1,3 +1,4 @@
+import { HolidaySyncService } from "#/features/holidays/application/service/holiday-sync-service";
 import { HolidayRepository } from "#/features/holidays/domain/repository/holiday-repository";
 import { UseCase } from "#/shared/application/use-case/usecase";
 import { HolidayTripNotAllowedError } from "../../domain/error/holiday-trip-not-allowed-error";
@@ -16,10 +17,15 @@ export class CreateTripRequestUseCase implements UseCase<
 > {
   constructor(
     private readonly tripRepository: TripRepository,
-    private readonly holidayRepository: HolidayRepository
+    private readonly holidayRepository: HolidayRepository,
+    private readonly holidaySyncService: HolidaySyncService,
   ) {}
 
-  async execute(input: CreateTripRequestInput): Promise<CreateTripRequestOutput> {
+  async execute(
+    input: CreateTripRequestInput,
+  ): Promise<CreateTripRequestOutput> {
+    await this.ensureHolidaySync(input.departureAt);
+
     await this.validateIfAlreadyRegistered(input);
 
     await this.validateDate(input.departureAt);
@@ -37,12 +43,12 @@ export class CreateTripRequestUseCase implements UseCase<
       input.departureAt,
       input.returnAt,
       input.purpose,
-      input.passengerCount
+      input.passengerCount,
     );
 
     await this.tripRepository.save(trip);
 
-    return { trip }
+    return { trip };
   }
 
   private async validateIfAlreadyRegistered(input: CreateTripRequestInput) {
@@ -51,7 +57,7 @@ export class CreateTripRequestUseCase implements UseCase<
       input.origin,
       input.destination,
       input.departureAt,
-      input.returnAt
+      input.returnAt,
     );
 
     if (exists) throw new TripAlreadyExistsError();
@@ -69,14 +75,15 @@ export class CreateTripRequestUseCase implements UseCase<
   }
 
   private validatePassengerCount(passengerCount: number) {
-    if (passengerCount <= 0)
-      throw new InvalidPassengerCountError();
+    if (passengerCount <= 0) throw new InvalidPassengerCountError();
   }
 
   private validateTripDestination(origin: string, destination: string) {
-    if (
-        origin.trim().toLowerCase() ===
-        destination.trim().toLowerCase()
-    ) throw new SameOriginDestinationError();
+    if (origin.trim().toLowerCase() === destination.trim().toLowerCase())
+      throw new SameOriginDestinationError();
+  }
+
+  private async ensureHolidaySync(date: Date): Promise<void> {
+    await this.holidaySyncService.ensureSync(date.getFullYear());
   }
 }
