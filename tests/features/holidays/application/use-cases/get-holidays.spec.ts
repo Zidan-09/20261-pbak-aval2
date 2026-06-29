@@ -1,18 +1,14 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi, type Mocked } from "vitest";
 
 import { GetHolidaysUseCase } from "#/features/holidays/application/use-cases/get-holidays.ts";
 import { HolidayRepository } from "#/features/holidays/domain/repository/holiday-repository.ts";
-import { HolidaySyncRepository } from "#/features/holidays/domain/repository/holiday-sync-repository.ts";
-import { HolidayProvider } from "#/features/holidays/application/gateway/holiday-provider.ts";
+import { HolidaySyncService } from "#/features/holidays/application/service/holiday-sync-service.ts";
 import { Holiday } from "#/features/holidays/domain/holiday.ts";
-import { HolidaySync } from "#/features/holidays/domain/holiday-sync.ts";
 import { HolidaysApiUnavailableError } from "#/features/holidays/domain/error/holidays-api-unavailable-error.ts";
 
 describe("GetHolidaysUseCase", () => {
-
-    let repository: HolidayRepository;
-    let syncRepository: HolidaySyncRepository;
-    let provider: HolidayProvider;
+    let repository: Mocked<HolidayRepository>;
+    let syncService: Mocked<HolidaySyncService>;
     let useCase: GetHolidaysUseCase;
 
     const holidays = [
@@ -28,178 +24,65 @@ describe("GetHolidaysUseCase", () => {
         repository = {
             get: vi.fn(),
             save: vi.fn(),
-            saveAll: vi.fn()
-        } as unknown as HolidayRepository;
+            saveAll: vi.fn(),
+            existsByDate: vi.fn()
+        } as unknown as Mocked<HolidayRepository>;
 
-        syncRepository = {
-            get: vi.fn(),
-            save: vi.fn()
-        };
-
-        provider = {
-            get: vi.fn()
-        };
+        syncService = {
+            ensureSync: vi.fn().mockResolvedValue(undefined)
+        } as unknown as Mocked<HolidaySyncService>;
 
         useCase = new GetHolidaysUseCase(
             repository,
-            syncRepository,
-            provider
+            syncService
         );
     });
 
-
-    it("should return holidays without updating when sync is from current year", async () => {
-        const sync = new HolidaySync(
-            2026,
-            new Date()
-        );
-
-        vi.mocked(syncRepository.get)
-            .mockResolvedValue(sync);
-
-        vi.mocked(repository.get)
-            .mockResolvedValue(holidays);
-
+    it("should return holidays", async () => {
+        repository.get.mockResolvedValue(holidays);
 
         const output = await useCase.execute({
             year: 2026
         });
 
-
-        expect(syncRepository.get)
+        expect(syncService.ensureSync)
             .toHaveBeenCalledWith(2026);
 
-        expect(provider.get)
-            .not.toHaveBeenCalled();
+        expect(repository.get)
+            .toHaveBeenCalledWith(2026);
 
-        expect(repository.saveAll)
-            .not.toHaveBeenCalled();
-
-        expect(syncRepository.save)
-            .not.toHaveBeenCalled();
-
-        expect(output)
-            .toEqual({
-                holidays
-            });
-    });
-
-
-    it("should update holidays when sync does not exist", async () => {
-        vi.mocked(syncRepository.get)
-            .mockResolvedValue(null);
-
-        vi.mocked(provider.get)
-            .mockResolvedValue(holidays);
-
-        vi.mocked(repository.saveAll)
-            .mockResolvedValue();
-
-        vi.mocked(syncRepository.save)
-            .mockResolvedValue();
-
-        vi.mocked(repository.get)
-            .mockResolvedValue(holidays);
-
-
-        const output = await useCase.execute({
-            year: 2026
+        expect(output).toEqual({
+            holidays
         });
-
-
-        expect(provider.get)
-            .toHaveBeenCalledWith(2026);
-
-        expect(repository.saveAll)
-            .toHaveBeenCalledWith(holidays);
-
-        expect(syncRepository.save)
-            .toHaveBeenCalled();
-
-        expect(output)
-            .toEqual({
-                holidays
-            });
     });
 
-
-    it("should update holidays when sync is from an old year", async () => {
-        const oldSync = new HolidaySync(
-            2026,
-            new Date("2025-01-01")
+    it("should propagate HolidaysApiUnavailableError from sync service", async () => {
+        syncService.ensureSync.mockRejectedValue(
+            new HolidaysApiUnavailableError()
         );
-
-        vi.mocked(syncRepository.get)
-            .mockResolvedValue(oldSync);
-
-        vi.mocked(provider.get)
-            .mockResolvedValue(holidays);
-
-        vi.mocked(repository.get)
-            .mockResolvedValue(holidays);
-
-
-        await useCase.execute({
-            year: 2026
-        });
-
-
-        expect(provider.get)
-            .toHaveBeenCalledWith(2026);
-
-        expect(repository.saveAll)
-            .toHaveBeenCalledWith(holidays);
-
-        expect(syncRepository.save)
-            .toHaveBeenCalled();
-    });
-
-
-    it("should throw HolidaysApiUnavailableError when provider fails", async () => {
-        vi.mocked(syncRepository.get)
-            .mockResolvedValue(null);
-
-        vi.mocked(provider.get)
-            .mockRejectedValue(
-                new Error("API down")
-            );
-
 
         await expect(
             useCase.execute({
                 year: 2026
             })
-        )
-        .rejects
-        .toBeInstanceOf(HolidaysApiUnavailableError);
+        ).rejects.toBeInstanceOf(HolidaysApiUnavailableError);
 
-
-        expect(repository.saveAll)
-            .not.toHaveBeenCalled();
-
-        expect(syncRepository.save)
+        expect(repository.get)
             .not.toHaveBeenCalled();
     });
-
 
     it("should propagate repository errors", async () => {
-        vi.mocked(syncRepository.get)
-            .mockRejectedValue(
-                new Error("Database error")
-            );
-
+        repository.get.mockRejectedValue(
+            new Error("Database error")
+        );
 
         await expect(
             useCase.execute({
                 year: 2026
             })
-        )
-        .rejects
-        .toThrow("Database error");
+        ).rejects.toThrow("Database error");
 
-
-        expect(provider.get)
-            .not.toHaveBeenCalled();
+        expect(syncService.ensureSync)
+            .toHaveBeenCalledWith(2026);
     });
-
 });
