@@ -94,7 +94,7 @@ async function main() {
       passengerCount: Math.floor(Math.random() * 20) + 1,
       status: randomItem([
         TripStatus.PENDING,
-        TripStatus.CANCELLED
+        TripStatus.CANCELED
       ]),
     };
   });
