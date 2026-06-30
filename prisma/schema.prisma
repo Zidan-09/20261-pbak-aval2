@@ -54,5 +54,5 @@ model HolidaySync {
 
 enum TripStatus {
   PENDING
-  CANCELLED
+  CANCELED
 }
