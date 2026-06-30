@@ -38,7 +38,7 @@ export class TripMapper {
             case "PENDING":
                 return TripStatus.PENDING;
 
-            case "CANCELLED":
+            case "CANCELED":
                 return TripStatus.CANCELED;
         }
     }
@@ -49,7 +49,7 @@ export class TripMapper {
                 return "PENDING"
 
             case TripStatus.CANCELED:
-                return "CANCELLED"
+                return "CANCELED"
         }
     }
 }
