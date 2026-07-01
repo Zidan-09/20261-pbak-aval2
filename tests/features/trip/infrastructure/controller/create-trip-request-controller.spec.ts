@@ -99,7 +99,7 @@ describe("CreateTripRequestController", () => {
             .toHaveBeenCalledOnce();
 
         expect(successSpy)
-            .toHaveBeenCalledWith(reply, output);
+            .toHaveBeenCalledWith(reply, output, 201);
     });
 
     it("should propagate validation errors", async () => {
